@@ -3,17 +3,33 @@
   "version": "1.0.0",
   "main": "db.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "start": "node server.js",
+    "setup-db": "node scripts/init-db.js",
+    "create-admin": "node scripts/create-admin.js",
+    "test": "node --test"
   },
-  "keywords": [],
+  "keywords": [
+    "airport",
+    "flight-booking",
+    "express",
+    "mysql"
+  ],
   "author": "",
   "license": "ISC",
-  "description": "",
+  "description": "A full-stack Airport Management System: user registration/login, flight search and booking, booking cancellation, and an admin panel for flight management. Built with Node.js, Express, and MySQL.",
   "dependencies": {
     "bcrypt": "^5.1.1",
-    "cors": "^2.8.5",
+    "dotenv": "^17.4.2",
     "express": "^5.1.0",
+    "express-session": "^1.18.1",
     "mysql2": "^3.14.1"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Dewansh32/Airport_management-System---Basic.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Dewansh32/Airport_management-System---Basic/issues"
+  },
+  "homepage": "https://github.com/Dewansh32/Airport_management-System---Basic#readme"
 }

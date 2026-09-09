@@ -2,37 +2,34 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Login - Airport Management</title>
+  <title>Login</title>
   <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
   <h1>Login</h1>
   <form id="loginForm">
-    <input type="text" id="username" placeholder="Username" required />
-    <input type="password" id="password" placeholder="Password" required />
+    <input type="text" id="username" placeholder="Username" required><br>
+    <input type="password" id="password" placeholder="Password" required><br>
     <button type="submit">Login</button>
-    <a href="register.html">Don't have an account? Register</a>
+    <p><a href="register.html">Register</a></p>
   </form>
-
   <script>
-    const form = document.getElementById('loginForm');
-    form.addEventListener('submit', async (e) => {
+    document.getElementById('loginForm').addEventListener('submit', async e => {
       e.preventDefault();
-      const username = document.getElementById('username').value;
-      const password = document.getElementById('password').value;
-      const response = await fetch('/login', {
+      const res = await fetch('/api/login', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          username: e.target.username.value,
+          password: e.target.password.value
+        })
       });
-      const data = await response.json();
-      if (response.ok) {
-        alert(data.message);
-        // Store user role for dashboard logic
-        localStorage.setItem('role', data.role);
-        window.location.href = 'dashboard.html';
+      const data = await res.json();
+      if (res.ok) {
+        // Redirect based on role
+        window.location.href = (data.role === 'admin') ? 'admin.html' : 'dashboard.html';
       } else {
-        alert(data.message);
+        alert(data.error);
       }
     });
   </script>

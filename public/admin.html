@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Panel</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <style>
+    /* Responsive grid for the admin Add-Flight form */
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 20px;
+      box-sizing: border-box;
+    }
+    .form-grid label {
+      display: flex;
+      flex-direction: column;
+    }
+    .form-grid small {
+      color: #555;
+      font-size: 0.8em;
+      margin-top: 4px;
+    }
+    button[type="submit"] {
+      grid-column: 1 / -1; /* span all columns */
+      padding: 12px;
+      background: #007bff;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button[type="submit"]:hover {
+      background: #0056b3;
+    }
+    /* Keep page padding on small screens */
+    @media (max-width: 600px) {
+      body {
+        padding: 0 10px;
+      }
+    }
+    /* Navigation bar styling */
+    nav.navbar {
+      background-color: #007bff;
+      color: white;
+      padding: 15px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-radius: 10px;
+      margin-bottom: 30px;
+    }
+    .logo {
+      font-size: 24px;
+      font-weight: bold;
+    }
+    .nav-links {
+      list-style: none;
+      display: flex;
+      margin: 0;
+      padding: 0;
+    }
+    .nav-links button {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 18px;
+      cursor: pointer;
+      padding: 6px 12px;
+    }
+    /* Flights table styling */
+    #fls {
+      width: 100%;
+      margin-top: 20px;
+      border-collapse: collapse;
+      background: white;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+    }
+    #fls th, #fls td {
+      padding: 12px;
+      border: 1px solid #ddd;
+      text-align: left;
+    }
+    #fls th {
+      background: #4CAF50;
+      color: white;
+    }
+    /* Action buttons */
+    #fls button {
+      margin-right: 5px;
+      padding: 6px 12px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    #fls button.edit {
+      background-color: #ffc107;
+      color: #333;
+    }
+    #fls button.delete {
+      background-color: #dc3545;
+      color: white;
+    }
+    #fls button.passengers {
+      background-color: #17a2b8;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <span class="logo">Admin Dashboard</span>
+    <ul class="nav-links">
+      <li><button id="logout">Logout</button></li>
+    </ul>
+  </nav>
+
+  <h1 style="text-align:center;">Manage Flights</h1>
+
+  <section>
+    <h2>Add Flight</h2>
+    <form id="addF" class="form-grid">
+      <label>
+        Flight Code
+        <input id="code" placeholder="e.g. AI-101" required>
+        <small>Unique code (airline-number)</small>
+      </label>
+
+      <label>
+        Source
+        <input id="source" placeholder="e.g. DEL" required>
+        <small>IATA code (3 letters)</small>
+      </label>
+
+      <label>
+        Destination
+        <input id="dest" placeholder="e.g. BLR" required>
+        <small>IATA code (3 letters)</small>
+      </label>
+
+      <label>
+        Arrival Time
+        <input id="arrival" type="time" required>
+        <small>24h format: HH:MM</small>
+      </label>
+
+      <label>
+        Departure Time
+        <input id="departure" type="time" required>
+        <small>24h format: HH:MM</small>
+      </label>
+
+      <label>
+        Duration
+        <input id="duration" placeholder="e.g. 02:30" required>
+        <small>HH:MM total flight time</small>
+      </label>
+
+      <label>
+        Status
+        <input id="status" placeholder="e.g. On Time" required>
+        <small>On Time, Delayed, Cancelled…</small>
+      </label>
+
+      <label>
+        Flight Type
+        <input id="flighttype" placeholder="e.g. Non-stop" required>
+        <small>Non-stop / Direct / Connecting</small>
+      </label>
+
+      <label>
+        Layover Time (min)
+        <input id="layover_time" type="number" min="0" value="0" required>
+        <small>Only if connecting flight</small>
+      </label>
+
+      <label>
+        Number of Stops
+        <input id="no_of_stops" type="number" min="0" value="0" required>
+        <small>0 for non-stop</small>
+      </label>
+
+      <label>
+        Airline
+        <select id="airlineid" required>
+          <!-- Populated by JS -->
+        </select>
+        <small>Select the airline</small>
+      </label>
+
+      <label>
+        Number of Seats   <!-- NEW FIELD -->
+        <input id="seatsInput" type="number" min="1" value="100" required>
+        <small>Default 100, override as needed</small>
+      </label>
+
+      <button type="submit">Add Flight</button>
+    </form>
+  </section>
+
+  <section>
+    <h2>All Flights</h2>
+    <table id="fls">
+      <tr>
+        <th>Code</th>
+        <th>From</th>
+        <th>To</th>
+        <th>Status</th>
+        <th>Seats</th>       <!-- NEW COLUMN -->
+        <th>Actions</th>
+      </tr>
+    </table>
+  </section>
+
+  <script>
+    // Logout
+    document.getElementById('logout').onclick = async () => {
+      await fetch('/api/logout', { method: 'POST' });
+      window.location.href = 'login.html';
+    };
+
+    // Load Airlines into dropdown
+    async function loadAirlines() {
+      const res = await fetch('/api/airlines');
+      const list = await res.json();
+      const sel = document.getElementById('airlineid');
+      sel.innerHTML = '';
+      list.forEach(a => {
+        const opt = document.createElement('option');
+        opt.value = a.AIRLINEID;
+        opt.innerText = `${a.AIRLINEID} — ${a.NAME}`;
+        sel.appendChild(opt);
+      });
+    }
+
+    // Add Flight handler (now includes seats)
+    document.getElementById('addF').onsubmit = async e => {
+      e.preventDefault();
+      const data = {
+        FLIGHT_CODE:    document.getElementById('code').value,
+        SOURCE:         document.getElementById('source').value,
+        DESTINATION:    document.getElementById('dest').value,
+        ARRIVAL:        document.getElementById('arrival').value,
+        DEPARTURE:      document.getElementById('departure').value,
+        DURATION:       document.getElementById('duration').value,
+        STATUS:         document.getElementById('status').value,
+        FLIGHTTYPE:     document.getElementById('flighttype').value,
+        LAYOVER_TIME:   parseInt(document.getElementById('layover_time').value),
+        NO_OF_STOPS:    parseInt(document.getElementById('no_of_stops').value),
+        AIRLINEID:      document.getElementById('airlineid').value,
+        AVAILABLE_SEATS: parseInt(document.getElementById('seatsInput').value) // NEW
+      };
+
+      const res = await fetch('/api/flights', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      const result = await res.json();
+      if (res.ok) {
+        alert('Flight added!');
+        loadFlights();
+      } else {
+        alert(result.error);
+      }
+    };
+
+    // Load and display all flights
+    async function loadFlights() {
+      const res = await fetch('/api/flights');
+      const arr = await res.json();
+      const tbl = document.getElementById('fls');
+      tbl.innerHTML = `
+        <tr>
+          <th>Code</th>
+          <th>From</th>
+          <th>To</th>
+          <th>Status</th>
+          <th>Seats</th>
+          <th>Actions</th>
+        </tr>
+      `;
+      arr.forEach(f => {
+        const r = tbl.insertRow();
+        r.insertCell().innerText = f.FLIGHT_CODE;
+        r.insertCell().innerText = f.SOURCE;
+        r.insertCell().innerText = f.DESTINATION;
+        r.insertCell().innerText = f.STATUS;
+        r.insertCell().innerText = f.AVAILABLE_SEATS; // NEW
+
+        const editBtn = document.createElement('button');
+        editBtn.innerText = 'Edit';
+        editBtn.classList.add('edit');
+        editBtn.onclick = async () => {
+          const s = prompt('New status:', f.STATUS);
+          if (s !== null) {
+            await fetch(`/api/flights/${f.FLIGHT_CODE}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ STATUS: s })
+            });
+            loadFlights();
+          }
+        };
+
+        const delBtn = document.createElement('button');
+        delBtn.innerText = 'Delete';
+        delBtn.classList.add('delete');
+        delBtn.onclick = async () => {
+          await fetch(`/api/flights/${f.FLIGHT_CODE}`, { method: 'DELETE' });
+          loadFlights();
+        };
+
+        const passBtn = document.createElement('button');
+        passBtn.innerText = 'Passengers';
+        passBtn.classList.add('passengers');
+        passBtn.onclick = async () => {
+          const resp = await fetch(`/api/flights/${f.FLIGHT_CODE}/passengers`);
+          const list = await resp.json();
+          alert(JSON.stringify(list, null, 2));
+        };
+
+        const cell = r.insertCell();
+        cell.append(editBtn, delBtn, passBtn);
+      });
+    }
+
+    // Initialize page
+    loadAirlines();
+    loadFlights();
+  </script>
+</body>
+</html>

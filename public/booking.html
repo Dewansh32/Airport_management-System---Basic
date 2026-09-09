@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Book Flight</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <span class="logo">Book Flight</span>
+    <ul class="nav-links">
+      <li><button id="logout">Logout</button></li>
+    </ul>
+  </nav>
+
+  <h1>Confirm Your Booking</h1>
+  <p>Flight: <span id="fc"></span></p>
+  <p>Available Seats: <span id="seats"></span></p>
+
+  <form id="bk">
+    <!-- Added name="" to each input -->
+    <input id="passport" name="passport" placeholder="Passport #" required>
+    <input id="fname"    name="fname"    placeholder="First Name" required>
+    <input id="m"        name="m"        placeholder="Middle Name">
+    <input id="lname"    name="lname"    placeholder="Last Name" required>
+    <input id="address"  name="address"  placeholder="Address" required>
+    <input id="phone"    name="phone"    placeholder="Phone" required>
+    <input id="age"      name="age"      type="number" placeholder="Age" required>
+    <input id="sex"      name="sex"      placeholder="Sex (M/F)" required>
+    <button type="submit">Confirm Booking</button>
+  </form>
+
+  <script>
+    // Logout
+    document.getElementById('logout').onclick = async () => {
+      await fetch('/api/logout', { method:'POST' });
+      window.location.href = 'login.html';
+    };
+
+    // Flight code from previous page
+    const fc = localStorage.getItem('flightToBook');
+    document.getElementById('fc').innerText = fc;
+
+    // Fetch & display seats
+    (async () => {
+      const res = await fetch(`/api/flights?code=${encodeURIComponent(fc)}`);
+      const flights = await res.json();
+      if (flights.length) {
+        document.getElementById('seats').innerText = flights[0].AVAILABLE_SEATS;
+      }
+    })();
+
+    // Submit handler: use getElementById to grab values
+    document.getElementById('bk').addEventListener('submit', async e => {
+      e.preventDefault();
+
+      const data = {
+        flightCode: fc,
+        passport: document.getElementById('passport').value.trim(),
+        fname:    document.getElementById('fname').value.trim(),
+        m:        document.getElementById('m').value.trim(),
+        lname:    document.getElementById('lname').value.trim(),
+        address:  document.getElementById('address').value.trim(),
+        phone:    document.getElementById('phone').value.trim(),
+        age:      parseInt(document.getElementById('age').value, 10),
+        sex:      document.getElementById('sex').value.trim()
+      };
+
+      const res = await fetch('/api/book', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(data)
+      });
+      const result = await res.json();
+
+      if (res.ok) {
+        alert('Booked successfully! Ticket #: ' + result.ticket);
+        window.location.href = 'dashboard.html';
+      } else {
+        alert(result.error);
+        // Refresh seat count in case it changed
+        (async () => {
+          const r2 = await fetch(`/api/flights?code=${encodeURIComponent(fc)}`);
+          const f2 = await r2.json();
+          if (f2.length) {
+            document.getElementById('seats').innerText = f2[0].AVAILABLE_SEATS;
+          }
+        })();
+      }
+    });
+  </script>
+</body>
+</html>

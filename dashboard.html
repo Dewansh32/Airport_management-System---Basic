@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard - Airport Management</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="logo">✈️ Airport Management</div>
+    <ul class="nav-links">
+      <li><a href="dashboard.html">Dashboard</a></li>
+      <li><a href="index.html">Logout</a></li>
+    </ul>
+  </nav>
+
+  <div class="dashboard">
+    <h1 id="welcomeMsg">🛬 Welcome, Admin!</h1>
+
+    <!-- Add Airport Form (visible only to admin) -->
+    <div id="addAirportFormContainer">
+      <h2>Add New Airport</h2>
+      <form id="addAirportForm">
+        <input type="text" id="apName" placeholder="Airport Name" required />
+        <input type="text" id="state" placeholder="State" required />
+        <input type="text" id="country" placeholder="Country" required />
+        <input type="text" id="city" placeholder="City" required />
+        <button type="submit">Add Airport</button>
+      </form>
+    </div>
+    <!-- Add City Form -->
+    <div id="addCityFormContainer">
+      <h2>Add New City</h2>
+      <form id="addCityForm">
+        <input type="text" id="cname" placeholder="City Name" required />
+        <input type="text" id="cstate" placeholder="State" required />
+        <input type="text" id="ccountry" placeholder="Country" required />
+        <button type="submit">Add City</button>
+      </form>
+    </div>
+
+
+    <h2>All Airports</h2>
+    <table id="airportTable">
+      <thead>
+        <tr>
+          <th>Airport Name</th>
+          <th>State</th>
+          <th>Country</th>
+          <th>City</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Airports will be populated here -->
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    // Check user role for admin controls
+    const role = localStorage.getItem('role');
+    if (!role) {
+      window.location.href = 'login.html'; // redirect if not logged in
+    }
+    if (role !== 'admin') {
+      // Hide add form and change welcome message for regular user
+      document.getElementById('addAirportFormContainer').style.display = 'none';
+      document.getElementById('welcomeMsg').textContent = '🛬 Welcome, User!';
+    }
+
+    // Fetch and display airports
+    fetch('/api/airports')
+      .then(response => response.json())
+      .then(data => {
+        const tbody = document.querySelector('#airportTable tbody');
+        data.forEach(airport => {
+          const tr = document.createElement('tr');
+          let actions = `<button onclick="deleteAirport('${airport.AP_NAME}')">🗑️ Delete</button>`;
+          // Add edit button if admin
+          if (role === 'admin') {
+            actions = `<button onclick="openEditForm('${airport.AP_NAME}', '${airport.STATE}', '${airport.COUNTRY}', '${airport.CNAME}')">✏️ Edit</button> ` + actions;
+          }
+          tr.innerHTML = `
+            <td>${airport.AP_NAME}</td>
+            <td>${airport.STATE}</td>
+            <td>${airport.COUNTRY}</td>
+            <td>${airport.CNAME}</td>
+            <td>${actions}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      })
+      .catch(error => console.error('Error fetching airports:', error));
+
+    // Delete airport (available to all users)
+    function deleteAirport(name) {
+      if (confirm(`Are you sure you want to delete "${name}"?`)) {
+        fetch(`/api/airports/${name}`, { method: 'DELETE' })
+          .then(response => response.json())
+          .then(data => {
+            alert(data.message);
+            location.reload();
+          })
+          .catch(error => console.error('Error deleting airport:', error));
+      }
+    }
+
+    // Handle Add Airport form submission (admin only)
+    const addForm = document.getElementById('addAirportForm');
+    if (addForm) {
+      addForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const apName = document.getElementById('apName').value;
+        const state = document.getElementById('state').value;
+        const country = document.getElementById('country').value;
+        const city = document.getElementById('city').value;
+        const response = await fetch('/api/airports', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ apName, state, country, city })
+        });
+        const data = await response.json();
+        alert(data.message);
+        if (response.ok) {
+          location.reload();
+        }
+      });
+    }
+
+    // Edit airport (admin only)
+    function openEditForm(name, currentState, currentCountry, currentCity) {
+      const newState = prompt("Enter new state:", currentState);
+      const newCountry = prompt("Enter new country:", currentCountry);
+      const newCity = prompt("Enter new city:", currentCity);
+      if (newState && newCountry && newCity) {
+        fetch(`/api/airports/${name}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ state: newState, country: newCountry, city: newCity })
+        })
+        .then(res => res.json().then(data => {
+          alert(data.message);
+          if (res.ok) {
+            location.reload();
+          }
+        }))
+        .catch(error => console.error('Error updating airport:', error));
+      }
+    }
+
+    // Handle Add City form
+    const cityForm = document.getElementById('addCityForm');
+    if (cityForm) {
+      cityForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const cname = document.getElementById('cname').value;
+        const cstate = document.getElementById('cstate').value;
+        const ccountry = document.getElementById('ccountry').value;
+
+        const response = await fetch('/api/cities', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cname, state: cstate, country: ccountry })
+        });
+
+        const data = await response.json();
+        alert(data.message);
+        if (response.ok) {
+          cityForm.reset(); // Clear the form
+        }
+      });
+    }
+
+  </script>
+</body>
+</html>
